@@ -257,12 +257,34 @@
         }
 
         @media (max-width: 440px) {
-            .header-brand { grid-template-columns: 40px minmax(0, 1fr) 40px; gap: 6px; }
-            .school-logo { width: 40px; height: 40px; }
-            .header h2 { font-size: 17px; }
-            .header h3 { font-size: 12px; }
+            body { padding: 8px 6px 20px; }
+            .controls { padding: 10px; }
+            .controls input[type="file"] { font-size: 12px; }
+            .control-actions { gap: 7px; }
+            .control-actions button { min-height: 44px; padding: 8px; font-size: 12px; line-height: 1.3; }
+            .batch-tools { padding: 10px; }
+            .batch-navigation { gap: 6px; }
+            .batch-tools button { min-height: 42px; padding: 7px 8px; }
+            .marksheet-wrapper { padding: 14px 8px 18px; }
+            .header-brand { grid-template-columns: 32px minmax(0, 1fr) 32px; gap: 4px; }
+            .school-logo { width: 32px; height: 32px; }
+            .header h2 { font-size: 16px; overflow-wrap: anywhere; }
+            .header h3 { font-size: 11px; }
             .header h4 { margin-top: 8px; padding: 6px 12px; }
-            .marksheet-wrapper { padding: 16px 10px 20px; }
+            .student-details-table { table-layout: fixed; }
+            .student-details-table th { overflow-wrap: anywhere; }
+            .student-details-table td input { padding: 5px 3px; font-size: 12px; }
+            .marks-table-shell { max-width: 100%; -webkit-overflow-scrolling: touch; touch-action: pan-x; }
+            .signatures { margin-top: 24px; font-size: 14px; }
+        }
+
+        @media (max-width: 360px) {
+            .control-actions { grid-template-columns: 1fr; }
+            .control-actions .print-btn { grid-column: auto; }
+            .header-brand { grid-template-columns: 28px minmax(0, 1fr) 28px; gap: 3px; }
+            .school-logo { width: 28px; height: 28px; }
+            .header h2 { font-size: 15px; }
+            .student-details-table th { font-size: 9px; }
         }
 
         /* ----- PRINT MEDIA QUERY ----- */
@@ -494,7 +516,7 @@
     };
 
     function addSubject(sub='', full='100', pass='030', obj='', subj='', int='', total='', word='') {
-        const tbody = String(sub).trim().toUpperCase() === 'ENGLISH'
+        const tbody = isEnglishSubject(sub)
             ? document.getElementById('extraSubjectBody')
             : document.getElementById('marksTableBody');
         const tr = document.createElement('tr');
@@ -517,6 +539,10 @@
     function deleteRow(btn) {
         btn.closest('tr').remove();
         calculateTotal();
+    }
+
+    function isEnglishSubject(subjectName) {
+        return String(subjectName).trim().toUpperCase() === 'ENGLISH';
     }
 
     function numberToWords(num) {
@@ -555,6 +581,8 @@
         let totalFull = 0, totalPass = 0, grandObtained = 0;
 
         rows.forEach(row => {
+            if (isEnglishSubject(row.querySelector('.subName').value)) return;
+
             totalFull += Number(row.querySelector('.fullM').value) || 0;
             totalPass += Number(row.querySelector('.passM').value) || 0;
             
@@ -904,14 +932,17 @@
             const obtained = (Number(subject.objective) || 0) + (Number(subject.subjective) || 0) + (Number(subject.internal) || 0);
             row.querySelector('.totObtained').value = obtained > 0 && obtained < (Number(subject.pass) || 30) ? `${obtained} F` : (obtained || '');
             row.querySelector('.markWord').value = obtained > 0 ? numberToWords(obtained) : '';
-            const targetBody = String(subject.name).trim().toUpperCase() === 'ENGLISH'
+            const englishSubject = isEnglishSubject(subject.name);
+            const targetBody = englishSubject
                 ? extraSubjectBody
                 : tbody;
             targetBody.appendChild(row);
 
-            totalFull += Number(subject.full) || 0;
-            totalPass += Number(subject.pass) || 0;
-            grandTotal += obtained;
+            if (!englishSubject) {
+                totalFull += Number(subject.full) || 0;
+                totalPass += Number(subject.pass) || 0;
+                grandTotal += obtained;
+            }
         });
 
         page.querySelector('#totFullMarks').textContent = totalFull;
