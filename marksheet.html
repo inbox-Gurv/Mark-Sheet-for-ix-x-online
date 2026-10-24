@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Marksheet Design</title>
+    <!-- SheetJS for Excel Upload -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-blue: #563b66;
+            --light-blue: #f1eaf4;
+            --border-color: #d8c9de;
+            --text-dark: #33263a;
+            --muted-text: #75677c;
+            --accent: #50e4c4;
+            --surface: #fffdfc;
+            --page-bg: #f5f0f6;
+        }
+
+        body { 
+            font-family: 'Roboto', sans-serif; 
+            margin: 0; 
+            padding: 28px 24px 48px;
+            background-color: var(--page-bg);
+            background-image: repeating-linear-gradient(135deg, rgba(86, 59, 102, 0.035) 0, rgba(86, 59, 102, 0.035) 1px, transparent 1px, transparent 8px);
+            color: var(--text-dark);
+        }
+
+        /* Main Container */
+        .marksheet-wrapper { 
+            background: white; 
+            padding: 30px 34px 34px;
+            max-width: 1120px;
+            margin: auto; 
+            border: 1px solid #e2d9e5;
+            border-top: 5px solid var(--primary-blue);
+            border-radius: 8px;
+            box-shadow: 0 18px 48px rgba(57, 39, 67, 0.12);
+            animation: fadeIn 0.45s ease-out;
+            position: relative;
+        }
+
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Controls Section */
+        .controls { 
+            margin-bottom: 20px; 
+            padding: 14px 18px;
+            max-width: 1120px;
+            margin: 0 auto 18px;
+            background: var(--surface);
+            border-radius: 6px;
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            gap: 18px;
+            border: 1px solid #e2d9e5;
+            box-shadow: 0 5px 16px rgba(57, 39, 67, 0.06);
+        }
+
+        .controls button { 
+            min-height: 40px;
+            padding: 9px 15px;
+            cursor: pointer; 
+            background: var(--primary-blue); 
+            color: white; 
+            border: none; 
+            border-radius: 4px;
+            font: 600 14px 'Roboto', sans-serif;
+            transition: background-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+        }
+        .controls button:hover { background: #92c8ec; box-shadow: 0 4px 10px rgba(224, 112, 215, 0.2); transform: translateY(-1px); }
+        .controls .print-btn { background: #17b9b1; }
+        .controls .print-btn:hover { background: #7edf57; }
+        .controls input[type="file"] { max-width: 270px; color: var(--muted-text); font: 13px 'Roboto', sans-serif; }
+        .controls input[type="file"]::file-selector-button {
+            min-height: 38px;
+            margin-right: 10px;
+            padding: 0 12px;
+            border: 1px solid #d8c9de;
+            border-radius: 4px;
+            background: #faf6fb;
+            color: var(--primary-blue);
+            font: 600 13px 'Roboto', sans-serif;
+            cursor: pointer;
+        }
+        .controls input[type="file"]::file-selector-button:hover { background: var(--light-blue); }
+        .controls > div:first-child { display: flex; align-items: center; gap: 12px; min-width: 0; }
+        .controls > div:first-child label { color: var(--text-dark); white-space: nowrap; }
+        .control-actions { display: flex; align-items: center; gap: 9px; }
+        .batch-tools {
+            max-width: 1120px;
+            margin: 0 auto 18px;
+            padding: 11px 14px;
+            background: #faf6fb;
+            border: 1px solid #e2d9e5;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .batch-tools[hidden] { display: none; }
+        .batch-tools select { min-height: 38px; width: min(420px, 100%); padding: 6px 10px; border: 1px solid #d8c9de; border-radius: 3px; color: var(--text-dark); background: white; font: 14px 'Roboto', sans-serif; }
+        .batch-navigation { display: flex; align-items: center; gap: 8px; }
+        .batch-tools button { min-height: 38px; padding: 7px 12px; border: 1px solid #d8c9de; border-radius: 4px; background: white; color: var(--primary-blue); font: 600 13px 'Roboto', sans-serif; cursor: pointer; }
+        .batch-tools button:hover:not(:disabled) { background: var(--light-blue); }
+        .batch-tools .print-btn { border-color: #a87924; background: #a87924; color: white; }
+        .batch-tools .print-btn:hover:not(:disabled) { background: #89601b; }
+        .batch-tools button:disabled { opacity: 0.45; cursor: not-allowed; }
+        .batch-count { min-width: 74px; color: var(--muted-text); text-align: center; font-size: 13px; }
+        #batchPrintRoot { display: none; }
+
+        /*  Layout */
+        .header { 
+            text-align: center; 
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e2d9e5;
+            padding-bottom: 16px;
+        }
+        .header-brand {
+            display: grid;
+            grid-template-columns: 72px minmax(0, 1fr) 72px;
+            align-items: center;
+            gap: 16px;
+        }
+        .school-logo {
+            grid-column: 1;
+            grid-row: 1;
+            width: 68px;
+            height: 68px;
+            object-fit: contain;
+        }
+        .school-logo-right { grid-column: 3; }
+        .header-copy { grid-column: 2; grid-row: 1; }
+        .header h2 { margin: 0; color: var(--primary-blue); font-weight: 700; font-size: 27px; line-height: 1.2; }
+        .header h3 { margin: 7px 0 0; color: var(--muted-text); font-size: 15px; font-weight: 500; }
+        .header h4 { 
+            margin: 12px auto 0;
+            background: #f1eaf4;
+            color: var(--primary-blue);
+            display: inline-block; 
+            padding: 7px 18px;
+            border: 1px solid #dfd2e4;
+            border-radius: 3px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        /* Section Headings */
+        .section-title {
+            background: #f6f1f7;
+            color: var(--primary-blue);
+            padding: 10px 12px;
+            border-top: 2px solid var(--primary-blue);
+            font-size: 12px;
+            font-weight: 700;
+            margin-top: 18px;
+            margin-bottom: 0;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        /* Tables (Student Details & Marks) */
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-bottom: 16px;
+            background: var(--surface);
+        }
+        
+        table, th, td { 
+            border: 1px solid var(--border-color);
+        }
+
+        th { 
+            background-color: #f1eaf4;
+            color: var(--primary-blue); 
+            font-weight: 700; 
+            font-size: 11px;
+            padding: 10px 7px;
+            text-align: center; 
+        }
+
+        td { padding: 7px; text-align: center; font-size: 14px; }
+        
+        /* Inputs styling inside tables */
+        input { 
+            width: 90%;
+            min-height: 38px;
+            padding: 7px 9px;
+            border: 1px solid #d8c9de;
+            text-align: center; 
+            font-family: inherit;
+            border-radius: 3px;
+            color: var(--text-dark);
+            background: #fff;
+            box-sizing: border-box;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+        }
+        input:focus { outline: none; border-color: #6b9a9a; background: #fffdfc; box-shadow: 0 0 0 3px rgba(86, 59, 102, 0.13); }
+        
+        .student-details-table th { font-size: 12px; }
+        .student-details-table td input { width: 95%; }
+
+        .delete-btn { background: #fff1ee; color: #bd4e3b; border: 1px solid #f0c9c1; min-width: 32px; min-height: 32px; padding: 4px 8px; cursor: pointer; border-radius: 3px; font-weight: 700; }
+        .delete-btn:hover { background: #fce1db; }
+
+        .total-row td { background-color: #f1eaf4; color: var(--primary-blue); font-weight: bold; }
+
+        .marks-table-shell { min-width: 0; }
+        .marks-table { min-width: 850px; }
+        .marks-table thead th { line-height: 1.25; }
+        .marks-table tbody tr:nth-child(even) { background-color: #fcf9fd; }
+        .marks-table tbody tr:hover td { background-color: #f6f1f7; }
+        .marks-table td input { width: 100%; min-width: 0; }
+        .marks-table td:first-child input { text-align: left; }
+
+        /* Signatures */
+        .signatures {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            padding-top: 18px;
+            border-top: 4px solid #e2d9e5;
+            font-weight: 700;
+            font-size: 17px;
+            color: var(--primary-blue);
+        }
+
+        @media (max-width: 760px) {
+            body { padding: 14px 10px 28px; }
+            .controls { align-items: stretch; flex-direction: column; gap: 12px; padding: 13px; }
+            .controls > div:first-child { align-items: flex-start; flex-direction: column; gap: 6px; }
+            .controls input[type="file"] { max-width: 100%; width: 100%; }
+            .control-actions { display: grid; grid-template-columns: 1fr 1fr; }
+            .control-actions .print-btn { grid-column: 1 / -1; }
+            .control-actions button { width: 100%; }
+            .batch-tools { align-items: stretch; flex-direction: column; }
+            .batch-navigation { justify-content: space-between; flex-wrap: wrap; }
+            .batch-tools select { width: 100%; }
+            .marksheet-wrapper { padding: 20px 16px 24px; }
+            .header-brand { grid-template-columns: 52px minmax(0, 1fr) 52px; gap: 9px; }
+            .school-logo { width: 50px; height: 50px; }
+            .header h2 { font-size: 21px; }
+            .header h3 { font-size: 13px; }
+            .student-details-table th { padding: 8px 4px; font-size: 10px; }
+            .student-details-table td { padding: 5px 3px; }
+            .student-details-table td input { width: 100%; min-height: 40px; padding: 5px 4px; font-size: 12px; }
+            .marks-table-shell { overflow-x: auto; overscroll-behavior-inline: contain; }
+            .marks-table { min-width: 850px; }
+            .signatures { margin-top: 30px; }
+        }
+
+        @media (max-width: 440px) {
+            .header-brand { grid-template-columns: 40px minmax(0, 1fr) 40px; gap: 6px; }
+            .school-logo { width: 40px; height: 40px; }
+            .header h2 { font-size: 17px; }
+            .header h3 { font-size: 12px; }
+            .header h4 { margin-top: 8px; padding: 6px 12px; }
+            .marksheet-wrapper { padding: 16px 10px 20px; }
+        }
+
+        /* ----- PRINT MEDIA QUERY ----- */
+        @page {
+            size: A4 portrait;
+            margin: 6mm;
+        }
+
+        @media print {
+            html, body { width: 100%; margin: 0; padding: 0; }
+            body { background: none; font-size: 14px; }
+            #batchPrintRoot { display: none; }
+            body.print-all #batchPrintRoot { display: block; }
+            body.print-all > .controls,
+            body.print-all > .batch-tools,
+            body.print-all > .marksheet-wrapper { display: none !important; }
+            body.print-all #batchPrintRoot .marksheet-wrapper { break-after: page; page-break-after: always; }
+            body.print-all #batchPrintRoot .marksheet-wrapper:last-child { break-after: auto; page-break-after: auto; }
+            .marksheet-wrapper { 
+                box-sizing: border-box;
+                display: flex;
+                flex-direction: column;
+                height: 285mm;
+                box-shadow: none;
+                margin: 0;
+                padding: 6mm;
+                width: 100%;
+                max-width: 100%;
+                border: 1.5px solid var(--primary-blue) !important;
+                animation: none;
+                isolation: isolate;
+            }
+            .watermark {
+                position: absolute;
+                z-index: 0;
+                top: 50%;
+                left: 50%;
+                width: 110mm;
+                height: 110mm;
+                object-fit: contain;
+                opacity: 0.09;
+                transform: translate(-50%, -50%);
+                pointer-events: none;
+            }
+            .marksheet-wrapper > :not(.watermark) { position: relative; z-index: 1; }
+            .no-print { display: none !important; }
+            
+            /* Remove input borders on print */
+            input {
+                box-sizing: border-box;
+                width: 100%;
+                min-width: 0;
+                border: none !important;
+                background: transparent !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                color: black !important;
+                font: inherit;
+                font-weight: 600;
+            }
+
+            .header { margin-bottom: 10px; padding-bottom: 8px; }
+            .header-brand { grid-template-columns: 22mm minmax(0, 1fr) 22mm; }
+            .school-logo { width: 22mm; height: 22mm; }
+            .header h2 { font-size: 26px; }
+            .header h3 { font-size: 18px; }
+            .header h4 { margin-top: 7px; padding: 4px 16px; font-size: 17px; }
+            .section-title { margin-top: 9px; padding: 5px 8px; font-size: 15px; }
+            table { table-layout: fixed; margin-bottom: 8px; }
+            th { padding: 4px 2px; font-size: 13px; overflow-wrap: anywhere; }
+            td { padding: 3px 2px; font-size: 15px; overflow-wrap: anywhere; }
+            .marks-table col:nth-child(1) { width: 17%; }
+            .marks-table col:nth-child(2),
+            .marks-table col:nth-child(3) { width: 11%; }
+            .marks-table col:nth-child(4),
+            .marks-table col:nth-child(5) { width: 8%; }
+            .marks-table col:nth-child(6) { width: 15%; }
+            .marks-table col:nth-child(7) { width: 14%; }
+            .marks-table col:nth-child(8) { width: 16%; }
+            .student-details-table th { font-size: 14px; }
+            .student-details-table td input { width: 100%; font-size: 16px; }
+            .marks-table-shell { flex: 1 1 auto; min-height: 0; display: flex; overflow: visible; }
+            .marks-table { flex: 1 1 auto; min-width: 0; height: 100%; margin-bottom: 0; }
+            .signatures { flex: 0 0 auto; margin-top: 8mm; padding-top: 0; font-size: 16px; }
+            
+            /* Maintain background colors in print */
+            .header h4, .section-title { 
+                -webkit-print-color-adjust: exact; 
+                print-color-adjust: exact; 
+            }
+            th { 
+                background-color: var(--light-blue) !important; 
+                -webkit-print-color-adjust: exact; 
+                print-color-adjust: exact; 
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="controls no-print">
+    <div>
+        <label style="font-weight:600; font-size: 14px;">Excel Upload:</label>
+        <input type="file" id="excelFile" accept=".xlsx, .xls">
+    </div>
+    <div class="control-actions">
+        <button type="button" onclick="downloadExcelTemplate()">Download Excel Template</button>
+        <button onclick="addSubject()">+ Add Subject</button>
+        <button onclick="calculateTotal()">Calculate</button>
+        <button class="print-btn" onclick="window.print()">Print Marksheet</button>
+    </div>
+</div>
+
+<div class="batch-tools no-print" id="batchTools" hidden>
+    <select id="studentSelect" aria-label="Select student"></select>
+    <div class="batch-navigation">
+        <button type="button" id="previousStudent" aria-label="Previous student">Previous</button>
+        <span class="batch-count" id="studentCount">0 / 0</span>
+        <button type="button" id="nextStudent" aria-label="Next student">Next</button>
+        <button type="button" class="print-btn" onclick="printAllMarkSheets()">Print All</button>
+    </div>
+</div>
+
+<div class="marksheet-wrapper">
+    
+    
+    <!-- Marksheet Header -->
+    <div class="header">
+        <div class="header-brand">
+            <img class="school-logo" src="logo.png" alt="B.D.S. Coaching Center logo">
+            <div class="header-copy">
+                <h2>B.D.S. COACHING CENTER KUMBHIYATARI, FATEHPUR, GAYA</h2>
+                <h3>HALF YEARLY EXAMINATION 2026</h3>
+                <h4>MARK SHEET</h4>
+            </div>
+            <img class="school-logo school-logo-right" src="logo.png" alt="">
+        </div>
+    </div>
+
+    <!-- Student Details Structure (Similar to AMARJIT 1.pdf layout) -->
+    <div class="section-title">Student Details</div>
+    <table class="student-details-table">
+        <tr>
+            <th>STUDENT NAME</th>
+            <th>ROLL NO</th>
+            <th>CLASS</th>
+        </tr>
+        <tr>
+            <td><input type="text" id="sName" placeholder="Enter Name"></td>
+            <td><input type="text" id="sRoll" placeholder="Roll No"></td>
+            <td><input type="text" id="sClass" placeholder="Class"></td>
+        </tr>
+        <tr>
+            <th>MOTHER'S NAME</th>
+            <th colspan="2">TOTAL CLASSES</th>
+        </tr>
+        <tr>
+            <td><input type="text" id="mName" placeholder="Mother's Name"></td>
+            <td colspan="2"><input type="text" id="tClass" placeholder="Total Classes"></td>
+        </tr>
+        <tr>
+            <th>FATHER'S NAME</th>
+            <th colspan="2">PRESENT IN CLASS</th>
+        </tr>
+        <tr>
+            <td><input type="text" id="fName" placeholder="Father's Name"></td>
+            <td colspan="2"><input type="text" id="pClass" placeholder="Present In Class"></td>
+        </tr>
+    </table>
+
+    <!-- Scholastic Achievement (Marks) -->
+    <div class="section-title">Scholastic Achievement</div>
+    <div class="marks-table-shell">
+    <table class="marks-table">
+        <colgroup>
+            <col><col><col><col><col><col><col><col><col class="no-print">
+        </colgroup>
+        <thead>
+            <tr>
+                <th rowspan="2">SUBJECT</th>
+                <th rowspan="2">FULL MARKS</th>
+                <th rowspan="2">PASS MARKS</th>
+                <th colspan="2">THEORY MARKS</th>
+                <th rowspan="2">INTERNAL ASSESSMENT</th>
+                <th rowspan="2">TOTAL OBTAINED</th>
+                <th rowspan="2">MARKS IN WORD</th>
+                <th rowspan="2" class="no-print">ACTION</th>
+            </tr>
+            <tr>
+                <th>OBJ</th>
+                <th>SUB</th>
+            </tr>
+        </thead>
+        <tbody id="marksTableBody">
+            <!-- Rows dynamically added here -->
+        </tbody>
+        <tbody class="total-row">
+            <tr>
+                <td><strong>TOTAL</strong></td>
+                <td id="totFullMarks">0</td>
+                <td id="totPassMarks">0</td>
+                <td colspan="3"><strong>AGGREGATE</strong></td>
+                <td id="grandTotal" style="color:var(--primary-blue); font-size:16px;">0</td>
+                <td id="resultDiv" style="font-weight:bold; color:var(--primary-blue); font-size: 14px;"></td>
+                <td class="no-print"></td>
+            </tr>
+        </tbody>
+        <tbody id="extraSubjectBody">
+        </tbody>
+    </table>
+    </div>
+
+    <!-- Signatures -->
+    <div class="signatures">
+        <div>Class Teacher </div>
+        <div>Principal sign </div>
+    </div>
+
+</div>
+
+<div id="batchPrintRoot" aria-hidden="true"></div>
+
+<script>
+    let batchStudents = [];
+    let activeStudentIndex = 0;
+
+    window.onload = () => {
+        ['SOCIAL SCIENCE', 'SANSKRIT', 'HINDI', 'MATH', 'SCIENCE', 'ENGLISH'].forEach(subject => addSubject(subject));
+    };
+
+    function addSubject(sub='', full='100', pass='030', obj='', subj='', int='', total='', word='') {
+        const tbody = String(sub).trim().toUpperCase() === 'ENGLISH'
+            ? document.getElementById('extraSubjectBody')
+            : document.getElementById('marksTableBody');
+        const tr = document.createElement('tr');
+        
+        tr.innerHTML = `
+            <td><input type="text" class="subName" value="${sub}" placeholder="Subject Name"></td>
+            <td><input type="number" class="fullM" value="${full}"></td>
+            <td><input type="number" class="passM" value="${pass}"></td>
+            <td><input type="number" class="thObj" value="${obj}" oninput="calcRow(this)"></td>
+            <td><input type="number" class="thSub" value="${subj}" oninput="calcRow(this)"></td>
+            <td><input type="number" class="thInt" value="${int}" oninput="calcRow(this)"></td>
+            <td><input type="text" class="totObtained" value="${total}" readonly style="font-weight:700;"></td>
+            <td><input type="text" class="markWord" value="${word}" readonly></td>
+            <td class="no-print"><button class="delete-btn" onclick="deleteRow(this)">X</button></td>
+        `;
+        tbody.appendChild(tr);
+        return tr;
+    }
+
+    function deleteRow(btn) {
+        btn.closest('tr').remove();
+        calculateTotal();
+    }
+
+    function numberToWords(num) {
+        const words = ['ZERO', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE'];
+        if (num === '' || isNaN(num)) return '';
+        let numStr = num.toString();
+        let result = '';
+        for(let char of numStr) {
+            if(words[parseInt(char)]) result += words[parseInt(char)] + ' ';
+        }
+        return result.trim();
+    }
+
+    function calcRow(input) {
+        const tr = input.closest('tr');
+        const obj = Number(tr.querySelector('.thObj').value) || 0;
+        const sub = Number(tr.querySelector('.thSub').value) || 0;
+        const int = Number(tr.querySelector('.thInt').value) || 0;
+        const pass = Number(tr.querySelector('.passM').value) || 30;
+        
+        const total = obj + sub + int;
+        
+        let displayTotal = total > 0 ? total : '';
+        if(total > 0 && total < pass) {
+            displayTotal = total + " F";
+        }
+
+        tr.querySelector('.totObtained').value = displayTotal;
+        tr.querySelector('.markWord').value = total > 0 ? numberToWords(total) : '';
+        
+        calculateTotal();
+    }
+
+    function calculateTotal() {
+        const rows = document.querySelectorAll('#marksTableBody tr, #extraSubjectBody tr');
+        let totalFull = 0, totalPass = 0, grandObtained = 0;
+
+        rows.forEach(row => {
+            totalFull += Number(row.querySelector('.fullM').value) || 0;
+            totalPass += Number(row.querySelector('.passM').value) || 0;
+            
+            let rowTot = row.querySelector('.totObtained').value.replace(' F', '');
+            grandObtained += Number(rowTot) || 0;
+        });
+
+        document.getElementById('totFullMarks').innerText = totalFull;
+        document.getElementById('totPassMarks').innerText = totalPass;
+        document.getElementById('grandTotal').innerText = grandObtained;
+        
+        if(totalFull > 0) {
+            let percentage = ((grandObtained / totalFull) * 100).toFixed(1);
+            let div = percentage >= 60 ? "1ST DIV" : (percentage >= 45 ? "2ND DIV" : (percentage >= 30 ? "3RD DIV" : "FAIL"));
+            document.getElementById('resultDiv').innerHTML = `RESULT: ${div} (${percentage}%)`;
+        } else {
+            document.getElementById('resultDiv').textContent = '';
+        }
+    }
+
+    function downloadExcelTemplate() {
+        const identityHeaders = [
+            'Student Name', "Mother's Name", "Father's Name", 'Class', 'Roll No',
+            'Total Classes', 'Present in Class'
+        ];
+        const subjectHeaders = [];
+        for (let subjectNumber = 1; subjectNumber <= 6; subjectNumber++) {
+            subjectHeaders.push(
+                `Subject ${subjectNumber} - Full Marks`,
+                `Subject ${subjectNumber} - Pass Marks`,
+                `Subject ${subjectNumber} - OBJ`,
+                `Subject ${subjectNumber} - SUB`,
+                `Subject ${subjectNumber} - Internal Assessment`
+            );
+        }
+        const headers = [...identityHeaders, ...subjectHeaders];
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils.aoa_to_sheet([headers]);
+        worksheet['!cols'] = headers.map((header, index) => ({ wch: index < identityHeaders.length ? 19 : 16 }));
+        const instructions = XLSX.utils.aoa_to_sheet([
+            ['HOW TO FILL THE MARKSHEET WORKBOOK'],
+            ['Use one row per student. Enter each student name and details only once.'],
+            ['Rename each Subject 1, Subject 2, etc. prefix in its five column headers to the subject name. Example: English - Full Marks, English - Pass Marks, English - OBJ, English - SUB, English - Internal Assessment.'],
+            ['For each student row, fill marks under the subject columns. Do not enter total obtained or marks in words; these are calculated automatically.'],
+            ['Delete all five columns for unused subject slots. Keep the first row as the column headers.'],
+            ['Roll No should be unique within each class.']
+        ]);
+        instructions['!cols'] = [{ wch: 120 }];
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Students');
+        XLSX.utils.book_append_sheet(workbook, instructions, 'Instructions');
+        XLSX.writeFile(workbook, 'marksheet-students-template.xlsx');
+    }
+
+    function normalizeHeader(value) {
+        return String(value ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+
+    function findHeaderIndexes(headerRow) {
+        const aliases = {
+            name: ['studentname', 'name', 'student'],
+            mother: ['mothersname', 'mothername'],
+            father: ['fathersname', 'fathername'],
+            studentClass: ['class', 'studentclass', 'grade'],
+            roll: ['rollno', 'rollnumber', 'roll'],
+            totalClasses: ['totalclasses', 'totalclass'],
+            present: ['presentinclass', 'presentclasses', 'present'],
+            subject: ['subject', 'subjectname'],
+            full: ['fullmarks', 'fullmark', 'maximum marks', 'maxmarks', 'maxmark'],
+            pass: ['passmarks', 'passmark'],
+            objective: ['obj', 'objective', 'objectivemarks'],
+            subjective: ['sub', 'subjective', 'subjectivemarks'],
+            internal: ['internalassessment', 'internal', 'internalmarks']
+        };
+        const normalizedHeaders = headerRow.map(normalizeHeader);
+        const indexes = {};
+
+        Object.entries(aliases).forEach(([field, names]) => {
+            indexes[field] = normalizedHeaders.findIndex(header =>
+                names.some(alias => normalizeHeader(alias) === header)
+            );
+        });
+
+        return indexes;
+    }
+
+    function readCell(row, indexes, field) {
+        const index = indexes[field];
+        return index >= 0 ? row[index] ?? '' : '';
+    }
+
+    function getWideSubjectGroups(headerRow) {
+        const metricSuffixes = [
+            { suffix: 'internalassessment', field: 'internal', pattern: /[\s_-]*(?:internal\s*assessment)$/i },
+            { suffix: 'internalmarks', field: 'internal', pattern: /[\s_-]*(?:internal\s*marks)$/i },
+            { suffix: 'fullmarks', field: 'full', pattern: /[\s_-]*(?:full\s*marks?)$/i },
+            { suffix: 'passmarks', field: 'pass', pattern: /[\s_-]*(?:pass\s*marks?)$/i },
+            { suffix: 'objectivemarks', field: 'objective', pattern: /[\s_-]*(?:objective\s*marks?)$/i },
+            { suffix: 'subjectivemarks', field: 'subjective', pattern: /[\s_-]*(?:subjective\s*marks?)$/i },
+            { suffix: 'objective', field: 'objective', pattern: /[\s_-]*(?:objective)$/i },
+            { suffix: 'subjective', field: 'subjective', pattern: /[\s_-]*(?:subjective)$/i },
+            { suffix: 'internal', field: 'internal', pattern: /[\s_-]*(?:internal)$/i },
+            { suffix: 'maxmarks', field: 'full', pattern: /[\s_-]*(?:max\s*marks?)$/i },
+            { suffix: 'obj', field: 'objective', pattern: /[\s_-]*(?:obj)$/i },
+            { suffix: 'sub', field: 'subjective', pattern: /[\s_-]*(?:sub)$/i }
+        ];
+        const groups = new Map();
+
+        headerRow.forEach((rawHeader, index) => {
+            const normalizedHeader = normalizeHeader(rawHeader);
+            const metric = metricSuffixes.find(item => normalizedHeader.endsWith(item.suffix));
+            if (!metric) return;
+
+            const subjectName = String(rawHeader).replace(metric.pattern, '').replace(/[-_:\s]+$/, '').trim();
+            if (!subjectName) return;
+
+            const key = normalizeHeader(subjectName);
+            if (!groups.has(key)) groups.set(key, { name: subjectName, columns: {} });
+            groups.get(key).columns[metric.field] = index;
+        });
+
+        return Array.from(groups.values()).filter(group =>
+            Object.keys(group.columns).some(field => field === 'objective' || field === 'subjective' || field === 'internal')
+        );
+    }
+
+    function parseWideBatchRows(rows, indexes) {
+        const subjectGroups = getWideSubjectGroups(rows[0]);
+        if (!subjectGroups.length) return null;
+
+        const students = [];
+        rows.slice(1).forEach(row => {
+            if (!row.some(value => String(value ?? '').trim())) return;
+
+            const student = {
+                name: String(readCell(row, indexes, 'name')),
+                mother: String(readCell(row, indexes, 'mother')),
+                father: String(readCell(row, indexes, 'father')),
+                studentClass: String(readCell(row, indexes, 'studentClass')),
+                roll: String(readCell(row, indexes, 'roll')),
+                totalClasses: String(readCell(row, indexes, 'totalClasses')),
+                present: String(readCell(row, indexes, 'present')),
+                subjects: []
+            };
+
+            subjectGroups.forEach(group => {
+                const values = {};
+                Object.entries(group.columns).forEach(([field, columnIndex]) => {
+                    values[field] = row[columnIndex] ?? '';
+                });
+                if (!Object.values(values).some(value => String(value).trim())) return;
+
+                student.subjects.push({
+                    name: group.name,
+                    full: values.full || 100,
+                    pass: values.pass || 30,
+                    objective: values.objective || '',
+                    subjective: values.subjective || '',
+                    internal: values.internal || ''
+                });
+            });
+
+            if (student.name.trim() || student.roll.trim()) {
+                if (student.subjects.length) students.push(student);
+            }
+        });
+
+        if (!students.length) throw new Error('No students with subject marks were found.');
+        return students;
+    }
+
+    function parseBatchRows(rows) {
+        if (rows.length < 2) throw new Error('Excel sheet has no student rows.');
+
+        const indexes = findHeaderIndexes(rows[0]);
+        if (indexes.name >= 0 && indexes.subject < 0) {
+            const wideStudents = parseWideBatchRows(rows, indexes);
+            if (wideStudents) return wideStudents;
+        }
+        if (indexes.name < 0 || indexes.subject < 0) {
+            return parseLegacyWorkbook(rows);
+        }
+
+        const studentsByKey = new Map();
+        let previousStudent = null;
+
+        rows.slice(1).forEach(row => {
+            if (!row.some(value => String(value ?? '').trim())) return;
+
+            let name = readCell(row, indexes, 'name');
+            let studentClass = readCell(row, indexes, 'studentClass');
+            let roll = readCell(row, indexes, 'roll');
+            if (!String(name).trim() && !String(roll).trim() && previousStudent) {
+                name = previousStudent.name;
+                studentClass = previousStudent.studentClass;
+                roll = previousStudent.roll;
+            }
+
+            const key = String(roll).trim()
+                ? `${String(studentClass).trim().toLowerCase()}|${String(roll).trim().toLowerCase()}`
+                : `${String(studentClass).trim().toLowerCase()}|${String(name).trim().toLowerCase()}`;
+            if (!String(name).trim() && !String(roll).trim()) return;
+
+            let student = studentsByKey.get(key);
+            if (!student) {
+                student = {
+                    name: String(name),
+                    mother: String(readCell(row, indexes, 'mother')),
+                    father: String(readCell(row, indexes, 'father')),
+                    studentClass: String(studentClass),
+                    roll: String(roll),
+                    totalClasses: String(readCell(row, indexes, 'totalClasses')),
+                    present: String(readCell(row, indexes, 'present')),
+                    subjects: []
+                };
+                studentsByKey.set(key, student);
+            }
+
+            ['mother', 'father', 'studentClass', 'roll', 'totalClasses', 'present'].forEach(field => {
+                const value = field === 'studentClass' ? studentClass : field === 'roll' ? roll : readCell(row, indexes, field);
+                if (String(value ?? '').trim()) student[field] = String(value);
+            });
+
+            const subjectName = String(readCell(row, indexes, 'subject')).trim();
+            if (subjectName) {
+                student.subjects.push({
+                    name: subjectName,
+                    full: readCell(row, indexes, 'full') || 100,
+                    pass: readCell(row, indexes, 'pass') || 30,
+                    objective: readCell(row, indexes, 'objective') || '',
+                    subjective: readCell(row, indexes, 'subjective') || '',
+                    internal: readCell(row, indexes, 'internal') || ''
+                });
+            }
+            previousStudent = student;
+        });
+
+        const students = Array.from(studentsByKey.values()).filter(student => student.subjects.length > 0);
+        if (!students.length) throw new Error('No valid students with subject rows were found.');
+        return students;
+    }
+
+    function parseLegacyWorkbook(rows) {
+        if (rows.length < 3) throw new Error('Use the batch template or include a student row and subject rows.');
+        const studentRow = rows[1] || [];
+        const student = {
+            name: String(studentRow[0] ?? ''),
+            mother: String(studentRow[1] ?? ''),
+            father: String(studentRow[2] ?? ''),
+            studentClass: String(studentRow[3] ?? ''),
+            roll: String(studentRow[4] ?? ''),
+            totalClasses: String(studentRow[5] ?? ''),
+            present: String(studentRow[6] ?? ''),
+            subjects: []
+        };
+
+        rows.slice(2).forEach(row => {
+            if (!row.some(value => String(value ?? '').trim())) return;
+            student.subjects.push({
+                name: String(row[0] ?? ''),
+                full: row[1] || 100,
+                pass: row[2] || 30,
+                objective: row[3] || '',
+                subjective: row[4] || '',
+                internal: row[5] || ''
+            });
+        });
+
+        if (!student.subjects.length) throw new Error('No subject rows were found in the workbook.');
+        return [student];
+    }
+
+    function renderStudent(studentIndex) {
+        const student = batchStudents[studentIndex];
+        if (!student) return;
+
+        activeStudentIndex = studentIndex;
+        document.getElementById('sName').value = student.name;
+        document.getElementById('mName').value = student.mother;
+        document.getElementById('fName').value = student.father;
+        document.getElementById('sClass').value = student.studentClass;
+        document.getElementById('sRoll').value = student.roll;
+        document.getElementById('tClass').value = student.totalClasses;
+        document.getElementById('pClass').value = student.present;
+
+        const tbody = document.getElementById('marksTableBody');
+        tbody.innerHTML = '';
+        document.getElementById('extraSubjectBody').innerHTML = '';
+        student.subjects.forEach(subject => {
+            const row = addSubject(subject.name, subject.full, subject.pass, subject.objective, subject.subjective, subject.internal);
+            calcRow(row.querySelector('.thObj'));
+        });
+
+        document.getElementById('studentSelect').value = String(studentIndex);
+        document.getElementById('studentCount').textContent = `${studentIndex + 1} / ${batchStudents.length}`;
+        document.getElementById('previousStudent').disabled = studentIndex === 0;
+        document.getElementById('nextStudent').disabled = studentIndex === batchStudents.length - 1;
+        document.getElementById('batchTools').hidden = false;
+        calculateTotal();
+    }
+
+    function loadBatchStudents(students) {
+        batchStudents = students;
+        const selector = document.getElementById('studentSelect');
+        selector.innerHTML = '';
+        students.forEach((student, index) => {
+            const option = document.createElement('option');
+            option.value = String(index);
+            option.textContent = `${student.roll ? `${student.roll} | ` : ''}${student.name || 'Student'}${student.studentClass ? ` | ${student.studentClass}` : ''}`;
+            selector.appendChild(option);
+        });
+        renderStudent(0);
+    }
+
+    function createPrintPage(student) {
+        const page = document.querySelector('.marksheet-wrapper').cloneNode(true);
+        const studentFields = {
+            sName: student.name,
+            mName: student.mother,
+            fName: student.father,
+            sClass: student.studentClass,
+            sRoll: student.roll,
+            tClass: student.totalClasses,
+            pClass: student.present
+        };
+        Object.entries(studentFields).forEach(([id, value]) => {
+            page.querySelector(`#${id}`).value = value;
+        });
+
+        const tbody = page.querySelector('#marksTableBody');
+        const extraSubjectBody = page.querySelector('#extraSubjectBody');
+        const rowTemplate = document.querySelector('#marksTableBody tr, #extraSubjectBody tr');
+        tbody.innerHTML = '';
+        extraSubjectBody.innerHTML = '';
+        let totalFull = 0;
+        let totalPass = 0;
+        let grandTotal = 0;
+
+        student.subjects.forEach(subject => {
+            const row = rowTemplate.cloneNode(true);
+            row.querySelector('.subName').value = subject.name;
+            row.querySelector('.fullM').value = subject.full;
+            row.querySelector('.passM').value = subject.pass;
+            row.querySelector('.thObj').value = subject.objective;
+            row.querySelector('.thSub').value = subject.subjective;
+            row.querySelector('.thInt').value = subject.internal;
+
+            const obtained = (Number(subject.objective) || 0) + (Number(subject.subjective) || 0) + (Number(subject.internal) || 0);
+            row.querySelector('.totObtained').value = obtained > 0 && obtained < (Number(subject.pass) || 30) ? `${obtained} F` : (obtained || '');
+            row.querySelector('.markWord').value = obtained > 0 ? numberToWords(obtained) : '';
+            const targetBody = String(subject.name).trim().toUpperCase() === 'ENGLISH'
+                ? extraSubjectBody
+                : tbody;
+            targetBody.appendChild(row);
+
+            totalFull += Number(subject.full) || 0;
+            totalPass += Number(subject.pass) || 0;
+            grandTotal += obtained;
+        });
+
+        page.querySelector('#totFullMarks').textContent = totalFull;
+        page.querySelector('#totPassMarks').textContent = totalPass;
+        page.querySelector('#grandTotal').textContent = grandTotal;
+        if (totalFull > 0) {
+            const percentage = ((grandTotal / totalFull) * 100).toFixed(1);
+            const division = percentage >= 60 ? '1ST DIV' : (percentage >= 45 ? '2ND DIV' : (percentage >= 30 ? '3RD DIV' : 'FAIL'));
+            page.querySelector('#resultDiv').textContent = `RESULT: ${division} (${percentage}%)`;
+        }
+        return page;
+    }
+
+    function printAllMarkSheets() {
+        if (!batchStudents.length) return;
+        const printRoot = document.getElementById('batchPrintRoot');
+        printRoot.innerHTML = '';
+        batchStudents.forEach(student => printRoot.appendChild(createPrintPage(student)));
+        document.body.classList.add('print-all');
+        window.print();
+    }
+
+    function clearBatchPrint() {
+        document.body.classList.remove('print-all');
+        document.getElementById('batchPrintRoot').innerHTML = '';
+    }
+
+    document.getElementById('studentSelect').addEventListener('change', event => {
+        renderStudent(Number(event.target.value));
+    });
+    document.getElementById('previousStudent').addEventListener('click', () => renderStudent(activeStudentIndex - 1));
+    document.getElementById('nextStudent').addEventListener('click', () => renderStudent(activeStudentIndex + 1));
+    window.addEventListener('afterprint', clearBatchPrint);
+
+    document.getElementById('excelFile').addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(loadEvent) {
+            try {
+                const workbook = XLSX.read(new Uint8Array(loadEvent.target.result), { type: 'array' });
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+                loadBatchStudents(parseBatchRows(rows));
+            } catch (error) {
+                alert(`Excel import failed: ${error.message}`);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    });
+
+    document.addEventListener('keydown', function(event) {
+        const input = event.target;
+        const table = input.closest('.student-details-table, .marks-table');
+        if (!table || !input.matches('input:not([type="file"])')) return;
+
+        const row = input.closest('tr');
+        const rowInputs = Array.from(row.querySelectorAll('input:not([type="file"])'));
+        const inputIndex = rowInputs.indexOf(input);
+        let target;
+
+        if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+            if (input.type === 'text' && !input.readOnly) {
+                const atBoundary = event.key === 'ArrowLeft'
+                    ? input.selectionStart === 0 && input.selectionEnd === 0
+                    : input.selectionStart === input.value.length && input.selectionEnd === input.value.length;
+                if (!atBoundary) return;
+            }
+
+            const nextIndex = inputIndex + (event.key === 'ArrowLeft' ? -1 : 1);
+            target = rowInputs[nextIndex];
+        } else if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+            const rows = Array.from(table.querySelectorAll('tr'));
+            const rowIndex = rows.indexOf(row);
+            const direction = event.key === 'ArrowUp' ? -1 : 1;
+
+            for (let nextRowIndex = rowIndex + direction;
+                nextRowIndex >= 0 && nextRowIndex < rows.length;
+                nextRowIndex += direction) {
+                const nextInputs = rows[nextRowIndex].querySelectorAll('input:not([type="file"])');
+                if (nextInputs.length) {
+                    target = nextInputs[Math.min(inputIndex, nextInputs.length - 1)];
+                    break;
+                }
+            }
+        } else {
+            return;
+        }
+
+        event.preventDefault();
+        if (target) target.focus();
+    });
+
+    // Excel File Upload
+    document.getElementById('excelFile').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if(!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+
+            if(json.length > 1) {
+                // Modified mapping for Excel row 2 as per inputs order
+                document.getElementById('sName').value = json[1][0] || '';
+                document.getElementById('mName').value = json[1][1] || '';
+                document.getElementById('fName').value = json[1][2] || '';
+                document.getElementById('sClass').value = json[1][3] || '';
+                document.getElementById('sRoll').value = json[1][4] || '';
+                
+                // Assuming json[1][5] is total class and json[1][6] is present
+                document.getElementById('tClass').value = json[1][5] || '';
+                document.getElementById('pClass').value = json[1][6] || '';
+                
+                document.getElementById('marksTableBody').innerHTML = '';
+                for(let i=2; i<json.length; i++) {
+                    if(json[i].length > 0) {
+                        addSubject(
+                            json[i][0] || '', json[i][1] || '100', json[i][2] || '30', 
+                            json[i][3] || '', json[i][4] || '', json[i][5] || ''
+                        );
+                    }
+                }
+                setTimeout(calculateTotal, 500);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    });
+</script>
+</body>
+</html>
